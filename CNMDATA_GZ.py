@@ -1,5 +1,7 @@
-# new Env('CNMDATA_GZ')
-# cron: * * * * *
+'''
+cron: * * * * *
+new Env('广州雷达图');
+'''
 
 
 import requests
