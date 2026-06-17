@@ -1,9 +1,10 @@
 """
 任务名称
-name: CNMDATA_DATA
+name: CNMDATA_Backup
 定时规则
-cron: 0 0 0 * * *
+cron: 0 0 2 1,11,21 * *
 """
+
 
 import os
 import zipfile
