@@ -13,7 +13,7 @@ from datetime import datetime, timedelta, timezone
 os.makedirs('./Pull', exist_ok=True)
 
 # 配置
-BARK_API = ""  # 这里可以配置自己的bark api
+SERVERCHAN_KEY = os.environ.get("SERVERCHAN_KEY", "")
 STATUS_FILE = "./Pull/last_success.json"
 TIMEOUT_MINUTES = 15
 
@@ -40,17 +40,24 @@ def save_last_success_time():
         print(f"保存状态文件失败: {e}")
 
 
-def send_bark_notification(title, content):
-    """发送Bark通知"""
+def send_notification(title, content):
+    """发送 ServerChan 通知"""
+    if not SERVERCHAN_KEY:
+        print("ServerChan SendKey 未配置，跳过通知")
+        return
     try:
-        bark_url = f"{BARK_API}/{title}/{content}"
-        response = requests.get(bark_url, timeout=10)
-        if response.status_code == 200:
-            print("Bark通知发送成功")
+        url = f"https://sctapi.ftqq.com/{SERVERCHAN_KEY}.send"
+        response = requests.post(url, data={
+            "title": title,
+            "desp": content
+        }, timeout=10)
+        result = response.json()
+        if result.get("code") == 0:
+            print("ServerChan 通知发送成功")
         else:
-            print(f"Bark通知发送失败，状态码: {response.status_code}")
+            print(f"ServerChan 通知发送失败: {result.get('message')}")
     except Exception as e:
-        print(f"发送Bark通知时出错: {e}")
+        print(f"发送 ServerChan 通知时出错: {e}")
 
 
 def check_timeout_and_notify():
@@ -60,10 +67,9 @@ def check_timeout_and_notify():
         time_diff = datetime.now() - last_success
         if time_diff > timedelta(minutes=TIMEOUT_MINUTES):
             title = "图片下载异常"
-            content = f"已超过{TIMEOUT_MINUTES}分钟未成功下载图片，请检查！"
-            if BARK_API:
-                send_bark_notification(title, content)
-                print(f"已发送超时通知: {content}")
+            content = f"已超过 {TIMEOUT_MINUTES} 分钟未成功下载图片，请检查！"
+            send_notification(title, content)
+            print(f"已发送超时通知: {content}")
 
 
 # 主要逻辑
@@ -77,36 +83,26 @@ local_now = utc_now + timedelta(hours=8)
 print(f"Downloading from URL: {url}")
 
 try:
-    response = requests.get(url, timeout=30)  # 添加请求超时
+    response = requests.get(url, timeout=30)
     if response.status_code == 200:
         filename = f"./Pull/{local_now.strftime('%Y%m%d%H%M%S')}.PNG"
-
-        # 确保目录存在
         os.makedirs("./Pull", exist_ok=True)
-
         try:
             with open(filename, "wb") as file:
                 file.write(response.content)
             print(f"图片保存成功！文件名: {filename}")
-
-            # 保存成功时间
             save_last_success_time()
-
         except Exception as e:
             print(f"保存文件时出错: {e}")
-            # 检查超时
             check_timeout_and_notify()
     else:
         print("下载失败，有可能是当前未更新图片，属于正常情况，如果超过10分钟未正常获取图片，请进行进一步检查！状态码:",
               response.status_code)
-        # 检查超时
         check_timeout_and_notify()
 
 except requests.RequestException as e:
     print(f"请求异常: {e}")
-    # 检查超时
     check_timeout_and_notify()
 except Exception as e:
     print(f"其他异常: {e}")
-    # 检查超时
     check_timeout_and_notify()
