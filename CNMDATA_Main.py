@@ -1,9 +1,10 @@
 """
 任务名称
-name: CNMDATA
+name: CNMDATA_MAIN
 定时规则
 cron: * * * * *
 """
+
 
 import requests
 import os
