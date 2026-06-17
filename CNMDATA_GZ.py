@@ -1,7 +1,10 @@
-'''
+"""
+任务名称
+name: CNMDATA_GZ
+定时规则
 cron: * * * * *
-new Env('广州雷达图');
-'''
+"""
+
 
 
 import requests
