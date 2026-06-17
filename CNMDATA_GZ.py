@@ -1,11 +1,7 @@
-"""
-任务名称
-name: CNMDATA_GZ
-定时规则
+'''
 cron: * * * * *
-"""
-
-
+new Env('广州雷达图');
+'''
 
 import requests
 import os
@@ -79,7 +75,9 @@ def check_timeout_and_notify():
 # 该站点使用北京时间，延迟约 6 分钟，可根据实际情况调整
 local_now = datetime.now(timezone.utc) + timedelta(hours=8) - timedelta(minutes=6)
 date_str = local_now.strftime("%Y%m%d")
-time_str = local_now.strftime("%Y%m%d%H%M00")
+aligned_minute = (local_now.minute // 6) * 6
+aligned_time = local_now.replace(minute=aligned_minute, second=0, microsecond=0)
+time_str = aligned_time.strftime("%Y%m%d%H%M%S")
 url = f"http://www.tqyb.com.cn/data/swan/mcr/{date_str}/{time_str}_gz.png"
 print(f"Downloading from URL: {url}")
 
