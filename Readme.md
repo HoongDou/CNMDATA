@@ -8,21 +8,18 @@
 
 1.2手动构建
 
-1. 青龙面板-脚本管理，创建空文件CNMDATA.py和CNMDATA_BACKUP.py，将相关代码复制粘贴
+1. 青龙面板-脚本管理，创建空文件CNMDATA_Main.py、CNMDATA_GZ.py和CNMDATA_BACKUP.py，将相关代码复制粘贴
 2. 创建空文件./Pull/last_success.json
 
-2.在CNMDATA.py中填写Bark api以启用bark推送
+2.在环境变量中填写SERVERCHAN Api以推送
+ - 名称：SERVERCHAN_KEY
 
-```python
-BARK_API = ""  # 这里可以配置自己的bark api
-```
-
-3.添加python依赖项 request
+3.添加python依赖项 requests
 
 4.创建CNMDATA定时任务
 
-- 名称：CNMDATA
-- 命令：python CNMDATA.py
+- 名称：CNMDATA_Main
+- 命令：python HoongDou_CNMDATA_master/CNMDATA_Main.py
 - 定时规则：\* * * * *
 
 5.创建CNMDATA_BACKUP定时任务
