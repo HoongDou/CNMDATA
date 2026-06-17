@@ -1,9 +1,6 @@
-"""
-任务名称
-name: CNMDATA_GZ
-定时规则
-cron: * * * * *
-"""
+# new Env('CNMDATA_GZ')
+# cron: * * * * *
+
 
 import requests
 import os
