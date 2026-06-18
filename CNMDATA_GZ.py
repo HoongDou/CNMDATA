@@ -16,26 +16,27 @@ os.makedirs('./Pull_GZ', exist_ok=True)
 SERVERCHAN_KEY = os.environ.get("SERVERCHAN_KEY", "")
 STATUS_FILE = "./Pull_GZ/last_success.json"
 TIMEOUT_MINUTES = 15
+print(f"SERVERCHAN_KEY: {'已配置' if os.environ.get('SERVERCHAN_KEY') else '未配置'}")
 
 
-def load_last_success_time():
-    """加载上次成功的时间"""
+def load_status():
+    """加载状态文件"""
     try:
         if os.path.exists(STATUS_FILE):
             with open(STATUS_FILE, 'r') as f:
-                data = json.load(f)
-                return datetime.fromisoformat(data['last_success'])
+                return json.load(f)
     except:
         pass
     return None
 
 
-def save_last_success_time():
-    """保存当前时间为上次成功时间"""
+def save_status(last_success_time, notified=False):
+    """保存状态"""
     try:
         with open(STATUS_FILE, 'w') as f:
             json.dump({
-                'last_success': datetime.now().isoformat()
+                'last_success': last_success_time.isoformat(),
+                'notified': notified
             }, f)
     except Exception as e:
         print(f"保存状态文件失败: {e}")
@@ -62,15 +63,31 @@ def send_notification(title, content):
 
 
 def check_timeout_and_notify():
-    """检查是否超时并发送通知"""
-    last_success = load_last_success_time()
-    if last_success:
-        time_diff = datetime.now() - last_success
-        if time_diff > timedelta(minutes=TIMEOUT_MINUTES):
+    """检查是否超时并发送通知（每次超时只通知一次）"""
+    status = load_status()
+
+    if status is None:
+        # 首次运行，初始化状态文件，不发通知
+        print("首次运行，已初始化状态文件")
+        save_status(datetime.now(), notified=False)
+        return
+
+    last_success = datetime.fromisoformat(status['last_success'])
+    already_notified = status.get('notified', False)
+    time_diff = datetime.now() - last_success
+
+    if time_diff > timedelta(minutes=TIMEOUT_MINUTES):
+        if already_notified:
+            print(f"已超时但通知已发送过，跳过重复通知（距上次成功: {int(time_diff.total_seconds() // 60)} 分钟）")
+        else:
             title = "广州雷达图下载异常"
             content = f"已超过 {TIMEOUT_MINUTES} 分钟未成功下载广州雷达图，请检查！"
             send_notification(title, content)
             print(f"已发送超时通知: {content}")
+            # 标记已通知，避免重复发送
+            save_status(last_success, notified=True)
+    else:
+        print(f"距上次成功下载 {int(time_diff.total_seconds() // 60)} 分钟，未超时")
 
 
 # 主要逻辑
@@ -91,7 +108,8 @@ try:
             with open(filename, "wb") as file:
                 file.write(response.content)
             print(f"图片保存成功！文件名: {filename}")
-            save_last_success_time()
+            # 下载成功，重置状态（清除已通知标记）
+            save_status(datetime.now(), notified=False)
         except Exception as e:
             print(f"保存文件时出错: {e}")
             check_timeout_and_notify()
